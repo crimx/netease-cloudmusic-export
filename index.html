@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>云音乐歌单</title>
+    <link rel="stylesheet" href="./node_modules/bulma/css/bulma.css" />
+    <link
+      rel="stylesheet"
+      href="./node_modules/@fortawesome/fontawesome-free/css/all.css"
+    />
+    <script src="./node_modules/@fortawesome/fontawesome-free/js/all.js"></script>
+    <script src="./node_modules/vue/dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div
+        v-if="userId && playlist && playlistDetails && covers && songs"
+        class="columns"
+      >
+        <div
+          class="column is-two-fifths"
+          style="height: 100vh; overflow: auto;"
+        >
+          <aside class="menu">
+            <template v-for="menuItem in listMenus">
+              <p class="menu-label">
+                {{ menuItem.title }}
+              </p>
+              <ul class="menu-list">
+                <li v-for="list in menuItem.lists" :key="list.id">
+                  <a @click="currentList = playlistDetails[list.id].playlist">
+                    <div class="media">
+                      <div class="media-left">
+                        <figure class="image is-48x48">
+                          <img
+                            :src="covers[list.id] || (list.coverImgUrl + '?param=48y48')"
+                            :alt="list.name"
+                          />
+                        </figure>
+                      </div>
+                      <div class="media-content">
+                        {{ list.name }}
+                        <br />
+                        <small class="has-text-grey-light"
+                          >{{
+                            playlistDetails[list.id]
+                              ? playlistDetails[list.id].playlist.trackIds
+                                  .length
+                              : list.trackCount
+                          }}首</small
+                        >
+                      </div>
+                    </div>
+                  </a>
+                </li>
+              </ul>
+            </template>
+          </aside>
+        </div>
+        <!-- column sidebar -->
+        <div
+          v-if="currentList"
+          class="column"
+          style="height: 100vh; overflow: auto;"
+        >
+          <div class="section">
+            <div class="media">
+              <figure class="media-left">
+                <p class="image is-128x128">
+                  <img
+                    :src="covers[currentList.id] || currentList.coverImgUrl"
+                    :alt="currentList.name"
+                  />
+                </p>
+              </figure>
+              <div class="media-content">
+                <h1>{{ currentList.name }}</h1>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- column main -->
+      </div>
+      <div v-else class="modal is-active">
+        <div class="modal-background"></div>
+        <div class="modal-content is-flex" style="justify-content: center;">
+          <div class="file">
+            <label class="file-label">
+              <input
+                class="file-input"
+                type="file"
+                webkitdirectory
+                multiple
+                name="playlist"
+                @change="onChooseUser"
+              />
+              <span class="file-cta">
+                <span class="file-icon">
+                  <i class="fas fa-upload"></i>
+                </span>
+                <span class="file-label">
+                  选择用户目录（一串数字的）
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+        <button class="modal-close is-large" aria-label="close"></button>
+      </div>
+    </div>
+
+    <script>
+      new Vue({
+        el: "#app",
+        data: {
+          currentList: null,
+          userId: null,
+          playlist: null,
+          playlistDetails: null,
+          covers: null,
+          songs: null
+        },
+        computed: {
+          listMenus() {
+            return [
+              {
+                title: "创建的歌单",
+                lists:
+                  this.playlist && this.userId
+                    ? this.playlist.playlist.filter(
+                        list => list.creator.userId == this.userId
+                      )
+                    : []
+              },
+              {
+                title: "收藏的歌单",
+                lists:
+                  this.playlist && this.userId
+                    ? this.playlist.playlist.filter(
+                        list => list.creator.userId != this.userId
+                      )
+                    : []
+              }
+            ];
+          }
+        },
+        methods: {
+          async onChooseUser(event) {
+            const files = event.target.files;
+            if (files.length <= 0) return;
+
+            const matchUserId = /^\d+/.exec(files[0].webkitRelativePath);
+            if (!matchUserId) return;
+
+            this.userId = matchUserId[0];
+
+            const playlistDetails = {};
+            const covers = {};
+
+            for (const file of files) {
+              if (file.name === "playlist.json") {
+                this.playlist = JSON.parse(await file.text());
+              } else if (file.name === "songs.json") {
+                this.songs = JSON.parse(await file.text());
+              } else if (file.name.endsWith(".json")) {
+                const playlist = JSON.parse(await file.text());
+                playlistDetails[playlist.playlist.id] = playlist;
+              } else if (file.name.endsWith(".jpg")) {
+                const matchId = /^\d+/.exec(file.name);
+                if (matchId) {
+                  covers[matchId[0]] = URL.createObjectURL(file);
+                }
+              }
+            }
+
+            this.playlistDetails = playlistDetails;
+            this.covers = covers;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>

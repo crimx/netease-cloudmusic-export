@@ -36,7 +36,9 @@ GIT_REPO=
 node index
 ```
 
-## 导出内容解释
+导出数据在 `data` 目录中，浏览器打开 `index.html` 可进行浏览。
+
+## 导出数据解释
 
 - `playlist.json` 所有的歌单信息，包括收藏的。
 - `song.json` 所有个人歌单合并起来的全部歌曲详细信息。
