@@ -71,14 +71,12 @@ async function getPlaylist(userId) {
     list => list.creator.userId === userId
   );
 
-  console.log(`\nFetched ${playlists.length} playlists.\n`);
-
   return playlists;
 }
 
 /** All songs info */
 async function storeSongsInfo(userId, playlists) {
-  console.log(`\nDownload songs info...\n`);
+  console.log(`\nDownload ${playlists.length} playlist details...\n`);
   progressBar.start(playlists.length, 0);
 
   const songs = new Set();
@@ -112,28 +110,37 @@ async function storeSongsInfo(userId, playlists) {
     await timer(dotenv.DELAY);
   }
 
-  const chunks = _.chunk([...songs], 1000);
+  progressBar.stop();
+
+  const chunks = _.chunk([...songs], 500);
 
   const songsData = {};
 
+  console.log(
+    `\nDownload ${songs.size} song details(in ${chunks.length} chunks)...\n`
+  );
+  progressBar.start(chunks.length, 0);
+
   for (const chunk of chunks) {
     const { data } = await axios({
-      url: `/song/detail`,
-      method: "POST",
-      data: `ids=${chunk.join(",")}`
+      url: `/song/detail?ids=${chunk.join(",")}`,
+      method: "GET"
     });
 
     for (const song of data.songs) {
       songsData[song.id] = song;
     }
+
+    progressBar.increment();
+    await timer(dotenv.DELAY);
   }
+
+  progressBar.stop();
 
   await fse.outputJson(
     path.join(__dirname, "data", `${userId}`, "songs.json"),
     songsData
   );
-
-  progressBar.stop();
 }
 
 async function storePlaylistCover(userId, playlists) {
