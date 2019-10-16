@@ -1,6 +1,7 @@
 const querystring = require("querystring");
 const cliProgress = require("cli-progress");
 const path = require("path");
+const shell = require("shelljs");
 const _ = require("lodash");
 const fse = require("fs-extra");
 const axios = require("axios");
@@ -20,11 +21,16 @@ async function main() {
   const playlists = await getPlaylist(userId);
   await storeSongsInfo(userId, playlists);
   await storePlaylistCover(userId, playlists);
+  await pushGitRepo();
 
   console.log(`\nDone.\n`);
 }
 
 async function login() {
+  if (!dotenv.PHONE || !dotenv.PASSWORD) {
+    throw new Error("Missing phone number or password");
+  }
+
   const { data, headers } = await axios({
     url: "/login/cellphone",
     method: "post",
@@ -177,6 +183,30 @@ async function storePlaylistCover(userId, playlists) {
   }
 
   progressBar.stop();
+}
+
+async function pushGitRepo() {
+  if (!dotenv.GIT_REPO) return;
+
+  shell.cd(__dirname);
+
+  if (await fse.pathExists(path.join(__dirname, "data", ".git"))) {
+    shell.exec(`git -C data fetch`);
+  } else {
+    const temp = "temp" + Date.now();
+    shell.exec(`git clone --no-checkout ${dotenv.GIT_REPO} ${temp}`);
+    await fse.move(
+      path.join(__dirname, temp, ".git"),
+      path.join(__dirname, "data", ".git"),
+      { overwrite: true }
+    );
+    await fse.rmdir(path.join(__dirname, temp));
+  }
+
+  shell.cd(path.join(__dirname, "data"));
+  shell.exec(`git add --all`);
+  shell.exec(`git commit -m"update playlist"`);
+  shell.exec(`git push --verbose`);
 }
 
 function timer(ms = 0) {

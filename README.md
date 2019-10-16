@@ -9,7 +9,10 @@ cd netease-cloudmusic-export
 yarn install
 ```
 
-项目根添加 `.env` 文件，补上手机号和密码。如果需要其它登录方式自行修改源码。
+项目根添加 `.env` 文件。
+
+- 补上手机号和密码，如果需要其它登录方式自行修改源码。
+- 可选 git 仓库，提供则自动添加新记录更新到仓库。
 
 ```
 BASE_URL=http://localhost:3000
@@ -18,6 +21,8 @@ DELAY=1000
 
 PHONE=
 PASSWORD=
+
+GIT_REPO=
 
 ```
 
