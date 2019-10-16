@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="overflow: hidden;">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -13,14 +13,14 @@
     <script src="./node_modules/@fortawesome/fontawesome-free/js/all.js"></script>
     <script src="./node_modules/vue/dist/vue.js"></script>
   </head>
-  <body>
+  <body style="overflow: hidden;">
     <div id="app">
       <div
         v-if="userId && playlist && playlistDetails && covers && songs"
-        class="columns"
+        class="columns is-marginless"
       >
         <div
-          class="column is-two-fifths"
+          class="column is-one-quarter"
           style="height: 100vh; overflow: auto;"
         >
           <aside class="menu">
@@ -40,9 +40,11 @@
                           />
                         </figure>
                       </div>
-                      <div class="media-content">
-                        {{ list.name }}
-                        <br />
+                      <div
+                        class="media-content is-flex"
+                        style="align-self: stretch; flex-direction: column; justify-content: space-around;"
+                      >
+                        <span>{{ list.name }}</span>
                         <small class="has-text-grey-light"
                           >{{
                             playlistDetails[list.id]
@@ -66,7 +68,7 @@
           style="height: 100vh; overflow: auto;"
         >
           <div class="section">
-            <div class="media">
+            <div class="media" style="margin-bottom: 1em;">
               <figure class="media-left">
                 <p class="image is-128x128">
                   <img
@@ -76,9 +78,105 @@
                 </p>
               </figure>
               <div class="media-content">
-                <h1>{{ currentList.name }}</h1>
+                <div class="content">
+                  <h1>
+                    {{ currentList.name }}
+                  </h1>
+                  <div class="level is-mobile">
+                    <div class="level-left">
+                      <div class="level-item">
+                        <a
+                          :href="`https://music.163.com/user/home?id=${currentList.creator.userId}`"
+                          target="_blank"
+                          rel="nofollow noopener noreferrer"
+                        >
+                          <img
+                            class="image is-24x24"
+                            style="margin-right: 2px;"
+                            :src="currentList.creator.avatarUrl"
+                          />
+                          {{ currentList.creator.nickname }}
+                        </a>
+                      </div>
+                      <div class="level-item has-text-grey-light">
+                        {{ new Date(currentList.createTime).toLocaleDateString() }}
+                        创建
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    v-if="currentList.tags && currentList.tags.length > 0"
+                    class="level is-mobile"
+                  >
+                    <div class="level-left">
+                      <div v-for="tag in currentList.tags" class="level-item">
+                        <span class="tag is-light">{{ tag }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+            <!-- media -->
+            <table class="table is-narrow is-hoverable">
+              <thead>
+                <tr>
+                  <th>序</th>
+                  <th>歌曲标题</th>
+                  <th>艺术家</th>
+                  <th>专辑</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(track, index) in playlistDetails[currentList.id].playlist.trackIds"
+                  :key="track.id"
+                >
+                  <td>{{ index + 1 }}</td>
+                  <td>
+                    <a
+                      :href="`https://music.163.com/song?id=${track.id}`"
+                      target="_blank"
+                      rel="nofollow noopener noreferrer"
+                      class="has-text-dark"
+                    >
+                      <img
+                        v-if="songs[track.id].al.picUrl"
+                        class="image is-24x24 is-inline-block"
+                        style="margin-right: 2px; vertical-align: middle;"
+                        :src="songs[track.id].al.picUrl + '?param=24y24'"
+                      />
+                      {{ songs[track.id].name }}
+                    </a>
+                  </td>
+                  <td>
+                    <template
+                      v-for="(artist, index) in songs[track.id].ar"
+                      v-if="artist.id"
+                    >
+                      {{ index === 0 ? "" : "/" }}
+                      <a
+                        :key="artist.id"
+                        :href="`https://music.163.com/artist?id=${artist.id}`"
+                        target="_blank"
+                        rel="nofollow noopener noreferrer"
+                        class="has-text-dark"
+                        >{{ artist.name }}</a
+                      >
+                    </template>
+                  </td>
+                  <td>
+                    <a
+                      :href="`https://music.163.com/album?id=${songs[track.id].al.id}`"
+                      target="_blank"
+                      rel="nofollow noopener noreferrer"
+                      class="has-text-dark"
+                      >{{ songs[track.id].al.name }}</a
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         <!-- column main -->
@@ -154,7 +252,7 @@
             const matchUserId = /^\d+/.exec(files[0].webkitRelativePath);
             if (!matchUserId) return;
 
-            this.userId = matchUserId[0];
+            this.userId = Number(matchUserId[0]);
 
             const playlistDetails = {};
             const covers = {};
